@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""
-Created on Wed Jun  7 18:56:09 2023
 
-@author: nachetefdez
-"""
+#Created on Wed Jun  7 18:56:09 2023
+
+#@author: nachetefdez
+
+#this code is to scrap the ITTF website and get the data of a player
+
+#Show a better way to do it
 
 import time
 from selenium import webdriver
@@ -127,6 +130,8 @@ def dominant_hand(td_tag):
         return 'Right'
     else:
         return 'Left'
+
+
 
 driver = webdriver.Chrome()
 options = webdriver.ChromeOptions()
