@@ -1,93 +1,162 @@
-
+from urllib.parse import urljoin
+from xml.etree.ElementTree import SubElement
+from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.common.action_chains import ActionChains
 from bs4 import BeautifulSoup
+import time
+from  matrix_operations import matrix_operations # type: ignore
 
+def setUp():
+    options = webdriver.ChromeOptions()
+    options.add_argument('--incognito')
+    options.add_argument("--disable-search-engine-choice-screen")
+    options.add_argument("--start-maximized")
 
-def go_to_table(page_source):
-    soup = BeautifulSoup(page_source, features = 'html.parser')
+    return webdriver.Chrome(options=options)
+
+def go_to_landing_page(driver,pageUrl):
+    driver.maximize_window()
+    driver.get(pageUrl)
+    time.sleep(5)
+    return driver
+
+def go_to_login_page(driver):
+    driver.find_element(by='xpath', value='/html/body/div[1]/div/div[1]/div/nav/ul/li[2]/a').click()
+    time.sleep(5)
+    driver.find_element(by='xpath', value='/html/body/div[1]/div/div[1]/div/nav/ul/li[2]/ul/li[1]/a').click()
+    time.sleep(5)
+    driver.find_element(by='xpath', value='/html/body/div[3]/div[2]').click()
+    time.sleep(5)
+
+    return driver
+
+def collect_elements(driver, string):
+    elements = []
+    elements = driver.find_elements(by='tag name', value=string)
+    return elements
+
+def login_in_ittf(driver, username, password):
+
+    usr =  driver.find_element(by='xpath', value='//*[@id="modlgn-username-16"]')
+    usr.clear()
+    usr.send_keys(username)
+    time.sleep(5)
+    passw = driver.find_element(by='xpath', value='//*[@id="modlgn-passwd-16"]')
+    passw.clear()
+    passw.send_keys(password)
+    time.sleep(10)
+
+    login = driver.find_element(by='xpath', value='//*[@id="login-form-16"]/div/div[4]/button')
+    actions = ActionChains(driver)
+    actions.move_to_element(login).click().perform()
+    time.sleep(10)
+
+    return driver
+
+def go_to_search_page(driver):
+
+    driver.find_element(by='xpath', value='//*[@id="navbar1"]/ul/li[6]').click()
+    time.sleep(5)
+    driver.find_element(by='xpath', value='//*[@id="navbar1"]/ul/li[6]/ul/li[1]').click()
+    time.sleep(5)
+
+    return driver
+
+def insert_player_name(driver, name1, name2):
+
+    player = driver.find_element(by='xpath', value='//*[@id="listform_30_com_fabrik_30"]/div[1]/div[2]/div[2]/div/div/div[2]/input[2]')
+    player.clear()
+    player.send_keys(name1 + ' ' + name2)
+    time.sleep(10)
+
+    candidates = driver.find_element(by='class name', value='dropdown-menu')
+    candidates_list = candidates.text
+    candidates_list = candidates_list.split('\n')
+
+    index = matrix_operations.match_name(name1, name2, candidates_list)
+
+    if index == False:
+        raise Exception("The player is not found")
+
+    entries =  collect_elements(candidates, 'a')
+
+    entries[index].click()
+    go_button = driver.find_element(by='xpath', value='//*[@id="listform_30_com_fabrik_30"]/div[1]/div[2]/div[3]/input')
+    actions = ActionChains(driver)
+    actions.move_to_element(go_button).click().perform()
+    time.sleep(10)
+
+    return driver
+
+def go_to_table(driver):
     
-    div_tag = soup.find('div', {'class':'site-grid'})
-    div_tag_2 = div_tag.find('div', {'class':'grid-child'})
-    main_tag = div_tag_2.find('main')
-    form_tag = main_tag.find('form', {'class': 'fabrikForm'})
-    div_tag_3 = form_tag.find('div', {'class': 'fabrikDataContainer'})
-    table_tag = div_tag_3.find('table', {'class': 'table'})
-    tbody_tag = table_tag.find('tbody', {'class': 'fabrik_groupdata'})
-    
-    return tbody_tag
+    #driver = driver.find_element(by='xpath', value='//*[@id="list_31_com_fabrik_31"]/tbody')
+    driver = driver.find_element(By.CLASS_NAME, "fabrik_groupdata")
 
-"""
-def go_to_table(page_source):
-    soup = BeautifulSoup(page_source, features='html.parser')
-    
-    tbody_tag = soup.find('div', {'class': 'site-grid'}) \
-                    .find('div', {'class': 'grid-child'}) \
-                    .find('main') \
-                    .find('form', {'class': 'fabrikForm'}) \
-                    .find('div', {'class': 'fabrikDataContainer'}) \
-                    .find('table', {'class': 'table'}) \
-                    .find('tbody', {'class': 'fabrik_groupdata'})
-    
-    return tbody_tag
-"""
+    return driver
 
 
-def extract_links_and_years(td_tag):
+def extract_links_and_years(driver):
     links = []
     data = []
     
-    text_list = td_tag.text # year labels
-    labels = text_list.split()
-    
-    for element in td_tag.findAll('a'):
-        links.append(element.get('href'))
-        
-    for j in range(len(links)):
-        row = []
-        row.append(labels[j*2])
-        row.append(labels[j*2+1])
-        row.append(links[j])
-        data.append(row)
-        
+    #driver = driver.find_element(by='xpath', value='//*[@id="list_30_com_fabrik_30_row_17809"]/td[4]')
+    #driver = driver.find_element(By.CSS_SELECTOR, '#list_30_com_fabrik_30_row_5406 .vw_stats___matches')
+    for element in driver.find_elements(By.CLASS_NAME, "vw_stats___matches"):
+        webel = element.find_elements(by='tag name', value='a')
+        if len(webel) > 0:
+
+            text_list = element.text
+            labels = text_list.split()
+
+            for el in webel:
+                links.append(el.get_attribute('href'))
+            
+            for j in range(len(links)):
+                row = []
+                row.append(labels[j*2])
+                row.append(labels[j*2+1])
+                row.append(links[j])
+                data.append(row)
+
     return data
 
-"""
-def extract_links_and_years(tbody_tag):
-    links = []
-    data = []
-    
-    td_tags = tbody_tag.find_all('td')
-    
-    for td_tag in td_tags:
-        text_list = td_tag.text.strip()  # year labels
-        labels = text_list.split()
-        
-        for element in td_tag.find_all('a'):
-            links.append(element.get('href'))
-        
-        for j in range(len(links)):
-            row = [labels[j*2], labels[j*2+1], links[j]]
-            data.append(row)
-        
-    return data
-"""
-
-def extract_data(tbody_tag):
+def extract_data(driver):
     matrix = []
     
-    for element in tbody_tag.findAll('tr'):
+    for element in driver.find_elements(by='tag name', value='tr'):
         text = element.text
         normalized_row = text.splitlines()
         matrix.append(normalized_row)
     
     return matrix
 
-"""    
-def extract_data(tbody_tag):
-    matrix = []
-    
-    for element in tbody_tag.find_all('tr'):
-        row = [td.text.strip() for td in element.find_all('td')]
-        matrix.append(row)
-    
-    return matrix
-"""
+def scroll_years(driver, data):
+
+    ESTATS = []
+    base_url = driver.current_url
+
+    for i in range(len(data)):
+
+        href = data[i][2]
+        driver.get(href)
+
+        tag = go_to_table(driver)
+
+        matches = extract_data(tag)
+
+        matches = matrix_operations.delete_first(matches)
+
+        for match in matches:
+
+            result = matrix_operations.split_tournament_and_players(match[0])
+        
+            if matrix_operations.is_singles_match(result):
+        
+                result = result + matrix_operations.split_score_and_winner(match[0])
+
+                ESTATS.append(result)
+
+    return ESTATS
+
