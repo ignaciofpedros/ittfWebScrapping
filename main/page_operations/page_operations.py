@@ -4,14 +4,17 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.action_chains import ActionChains
 from bs4 import BeautifulSoup
-import time
 from  matrix_operations import matrix_operations # type: ignore
+#import undetected_chromedriver as webdriver
+import time
 
 def setUp():
     options = webdriver.ChromeOptions()
     options.add_argument('--incognito')
     options.add_argument("--disable-search-engine-choice-screen")
     options.add_argument("--start-maximized")
+    #options.add_argument("--headless")
+    #options.add_argument("--use_subprocess")
 
     return webdriver.Chrome(options=options)
 
@@ -45,12 +48,12 @@ def login_in_ittf(driver, username, password):
     passw = driver.find_element(by='xpath', value='//*[@id="modlgn-passwd-16"]')
     passw.clear()
     passw.send_keys(password)
-    time.sleep(10)
+    time.sleep(5)
 
     login = driver.find_element(by='xpath', value='//*[@id="login-form-16"]/div/div[4]/button')
     actions = ActionChains(driver)
     actions.move_to_element(login).click().perform()
-    time.sleep(10)
+    time.sleep(5)
 
     return driver
 
@@ -65,10 +68,10 @@ def go_to_search_page(driver):
 
 def insert_player_name(driver, name1, name2):
 
-    player = driver.find_element(by='xpath', value='//*[@id="listform_30_com_fabrik_30"]/div[1]/div[2]/div[2]/div/div/div[2]/input[2]')
+    player = driver.find_element(By.CLASS_NAME, "autocomplete-trigger")
     player.clear()
     player.send_keys(name1 + ' ' + name2)
-    time.sleep(10)
+    time.sleep(5)
 
     candidates = driver.find_element(by='class name', value='dropdown-menu')
     candidates_list = candidates.text
@@ -76,33 +79,44 @@ def insert_player_name(driver, name1, name2):
 
     index = matrix_operations.match_name(name1, name2, candidates_list)
 
-    if index == False:
+    if index == "False":
         raise Exception("The player is not found")
 
     entries =  collect_elements(candidates, 'a')
 
-    entries[index].click()
-    go_button = driver.find_element(by='xpath', value='//*[@id="listform_30_com_fabrik_30"]/div[1]/div[2]/div[3]/input')
+    entries_button = entries[index]
+    actions = ActionChains(driver)
+    actions.move_to_element(entries_button).click().perform()
+
+    #entries[index].click()
+    #go_button = driver.find_element(by='xpath', value='//*[@id="listform_30_com_fabrik_30"]/div[1]/div[2]/div[3]/input')
+    go_button = driver.find_element(By.CLASS_NAME, "btn-info")
     actions = ActionChains(driver)
     actions.move_to_element(go_button).click().perform()
-    time.sleep(10)
+    time.sleep(5)
 
     return driver
 
 def go_to_table(driver):
     
-    #driver = driver.find_element(by='xpath', value='//*[@id="list_31_com_fabrik_31"]/tbody')
     driver = driver.find_element(By.CLASS_NAME, "fabrik_groupdata")
+    time.sleep(5)
 
     return driver
 
+def go_to_profile_page(driver):
+
+    profile_button = driver.find_element(by='xpath', value='//*[@id="navbar1"]/ul/li[7]/a')
+    actions = ActionChains(driver)
+    actions.move_to_element(profile_button).click().perform()
+    time.sleep(5)
+
+    return driver
 
 def extract_links_and_years(driver):
     links = []
     data = []
     
-    #driver = driver.find_element(by='xpath', value='//*[@id="list_30_com_fabrik_30_row_17809"]/td[4]')
-    #driver = driver.find_element(By.CSS_SELECTOR, '#list_30_com_fabrik_30_row_5406 .vw_stats___matches')
     for element in driver.find_elements(By.CLASS_NAME, "vw_stats___matches"):
         webel = element.find_elements(by='tag name', value='a')
         if len(webel) > 0:
@@ -119,33 +133,37 @@ def extract_links_and_years(driver):
                 row.append(labels[j*2+1])
                 row.append(links[j])
                 data.append(row)
+    
+    time.sleep(5)
 
     return data
 
 def extract_data(driver):
     matrix = []
+
+    tags = driver.find_elements(by='tag name', value='tr')
+    time.sleep(5)
     
-    for element in driver.find_elements(by='tag name', value='tr'):
+    for element in tags:
         text = element.text
         normalized_row = text.splitlines()
         matrix.append(normalized_row)
-    
+
     return matrix
 
 def scroll_years(driver, data):
 
     ESTATS = []
-    base_url = driver.current_url
 
-    for i in range(len(data)):
+    #for i in range(len(data)):
+    for i in range(1):
 
         href = data[i][2]
         driver.get(href)
+        time.sleep(5)
 
         tag = go_to_table(driver)
-
         matches = extract_data(tag)
-
         matches = matrix_operations.delete_first(matches)
 
         for match in matches:
@@ -156,7 +174,9 @@ def scroll_years(driver, data):
         
                 result = result + matrix_operations.split_score_and_winner(match[0])
 
-                ESTATS.append(result)
+                ESTATS.append(result)        
+
+    driver.close()
 
     return ESTATS
 

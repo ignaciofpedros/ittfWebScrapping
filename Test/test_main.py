@@ -10,6 +10,7 @@ sys.path.append("/Users/nachetefdez/Documents/ittfWebScrapping/main")
 
 from  page_operations import page_operations # type: ignore
 from  matrix_operations import matrix_operations # type: ignore
+from change_ips import change_ips # type: ignore
 
 
 class InputFormsCheck(unittest.TestCase):
@@ -81,8 +82,6 @@ class InputFormsCheck(unittest.TestCase):
 
         assert str(datetime.now().year) in data[0][0]
 
-    """
-
     def test_scroll_years(self):
 
         driver = page_operations.go_to_landing_page(self.driver, "https://www.ittf.com/")
@@ -102,6 +101,36 @@ class InputFormsCheck(unittest.TestCase):
         ESTATS = page_operations.scroll_years(driver, data)
 
         assert "2024" in ESTATS[0][0]
+
+    """    
+
+    def test_get_dom_hand(self):
+
+        driver = page_operations.go_to_landing_page(self.driver, "https://www.ittf.com/")
+
+        driver = page_operations.go_to_login_page(driver)
+
+        driver = page_operations.login_in_ittf(driver, "Jaime Garcia", "J&imeP#tata1")
+
+        driver = page_operations.go_to_search_page(driver)
+
+        driver = page_operations.insert_player_name(driver, "Martin", "Bentancor")
+
+        data = page_operations.extract_links_and_years(driver)
+
+        data = matrix_operations.delete_first(data)
+
+        ESTATS = page_operations.scroll_years(driver, data)
+
+        print(ESTATS)
+
+        rivals = matrix_operations.get_rivals(ESTATS, "Martin Bentancor")
+
+        print(rivals)
+
+        driver = matrix_operations.get_rivals_dom_hand(rivals, driver)
+
+        assert "Players Profiles" in driver.title
 
     """ 
     def tearDown(self):

@@ -1,0 +1,21 @@
+import collections.abc as collections
+
+from src.clean_scrapping.shared import request_object as req
+
+
+class MatchListRequestObject(req.ValidRequestObject):
+
+    def __init__(self, filters=None):
+        self.filters = filters
+
+    @classmethod
+    def from_dict(cls, adict):
+        invalid_req = req.InvalidRequestObject()
+
+        if 'filters' in adict and not isinstance(adict['filters'], collections.Mapping):
+            invalid_req.add_error('filters', 'Is not iterable')
+
+        if invalid_req.has_errors():
+            return invalid_req
+
+        return MatchListRequestObject(filters=adict.get('filters', None))

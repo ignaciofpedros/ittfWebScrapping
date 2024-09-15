@@ -1,16 +1,15 @@
 [project]
-name = "clean-scrapping"
+name = "ittfwebscrapping"
 version = "0.1.0"
 description = "Add your description here"
 authors = [
     { name = "Nacho", email = "ignacio.fpedros@gmail.com" }
 ]
 dependencies = [
-    "pytest>=8.3.2",
     "deepdiff>=8.0.1",
 ]
 readme = "README.md"
-requires-python = ">= 3.12"
+requires-python = ">= 3.8"
 
 [build-system]
 requires = ["hatchling"]
@@ -24,4 +23,4 @@ dev-dependencies = []
 allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/clean_scrapping"]
+packages = ["src/ittfwebscrapping"]

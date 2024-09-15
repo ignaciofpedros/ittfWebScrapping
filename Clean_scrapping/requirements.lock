@@ -10,8 +10,12 @@
 #   universal: false
 
 -e file:.
+deepdiff==8.0.1
+    # via clean-scrapping
 iniconfig==2.0.0
     # via pytest
+orderly-set==5.2.2
+    # via deepdiff
 packaging==24.1
     # via pytest
 pluggy==1.5.0

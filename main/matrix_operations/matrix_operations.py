@@ -1,3 +1,6 @@
+from  page_operations import page_operations # type: ignore
+from selenium.webdriver.common.by import By
+
 import re
 
 def get_first_names(list_names):
@@ -40,7 +43,7 @@ def match_name(name1, name2, list_names):
 
                         return index
 
-    return False
+    return "False"
 
 
 def delete_first(matrix):
@@ -76,22 +79,6 @@ def split_score_and_winner(string):
 
     return result
 
-# Modify the regular expression to detect the first ')'
-regex = r'\)'
-
-
-
-
-def delete_doubles(matrix):
-    length = len(matrix)
-    length_list = range(length)
-    rev = reversed(length_list) 
-        
-    for i in rev:
-        if matrix[i][8] != '':
-            matrix.pop(i)
-            
-    return matrix
 
 def normalize(matrix):
     length = len(matrix)
@@ -110,10 +97,11 @@ def normalize(matrix):
     return matrix
 
 def pick_rival(matrix, name):
-    if name in matrix[2].lower():
-        return matrix[3]
-    else:
+    name = name.split()
+    if name[0].lower() in matrix[1].lower() and name[1].lower() in matrix[1].lower():
         return matrix[2]
+    else:
+        return matrix[1]
     
 def name_surname(list):
     list = list.split()
@@ -121,8 +109,43 @@ def name_surname(list):
 
     return name    
     
-def dominant_hand(td_tag):
-    if 'right' in td_tag.text.lower():
+def dominant_hand(element):
+    if 'right' in element.text.lower():
         return 'Right'
     else:
         return 'Left'
+
+def get_rivals(matrix, name):
+
+    rivals = []
+
+    for i in range(len(matrix)):
+        row = matrix[i]
+        rivals.append(name_surname(pick_rival(row, name)))
+
+    return rivals
+
+def get_rivals_dom_hand(matrix, driver):
+
+    hands = []
+
+    driver = page_operations.setUp()
+    driver = page_operations.go_to_landing_page(driver, "https://www.ittf.com/")
+    driver = page_operations.go_to_login_page(driver)
+    driver = page_operations.login_in_ittf(driver, "Jaime Garcia", "J&imeP#tata1")
+    driver = page_operations.go_to_profile_page(driver)
+
+    for element in matrix:
+        element = element.split()
+
+        driver = page_operations.insert_player_name(driver, element[0], element[1])
+
+        for webel in driver.find_elements(By.CLASS_NAME, "vw_profiles___profile"):
+
+            lines = webel.text.splitlines()
+            if len(lines) > 1:
+                hands.append(dominant_hand(webel))
+
+    print(hands)
+
+    return driver
